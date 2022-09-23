@@ -115,6 +115,9 @@
     punchout(width,depth,gap,thick,fillet,shape)
     
 */
+include <NopSCADlib/core.scad>;
+include <NopSCADlib/printed/fan_guard.scad>;
+include <NopSCADlib/vitamins/fans.scad>;
 
 use <./lib/fillets.scad>;
 
@@ -2491,10 +2494,10 @@ module fan_mask(size, thick, style) {
         inner = size == 30 ? 24 :
             size == 40 ? 32 :
             size == 50 ? 40 :
-                size == 60 ? 50 :
-                size == 70 ? 61.9 :
-                    size == 80 ? 71.5 :
-                    size * 0.8; // Use 80% as default
+            size == 60 ? 50 :
+            size == 70 ? 61.9 :
+            size == 80 ? 71.5 :
+            size * 0.8; // Use 80% as default
         
         rings = size <= 40 ? 4 : 6;
         bar_size = size <= 40 ? 2 : 3;
@@ -2512,21 +2515,38 @@ module fan_mask(size, thick, style) {
             translate([-screw_offset, -screw_offset, (thick+2)/2]) cylinder(d=3, h=thick+2, center=true);
 
             difference() {
-            union() {
-                for(i=[inner:-rings_spacing:0]) {
-                    difference() {
-                        cylinder(d=base_ring_size - i, h=thick+2);
-                        translate([0, 0, -1]) cylinder(d=base_ring_size - i - (rings_spacing/2), h=thick+4);
+                union() {
+                    for(i=[inner:-rings_spacing:0]) {
+                        difference() {
+                            cylinder(d=base_ring_size - i, h=thick+2);
+                            translate([0, 0, -1]) cylinder(d=base_ring_size - i - (rings_spacing/2), h=thick+4);
+                        }
                     }
                 }
-            }
                 
-            translate([0, 0, -1]) union() {
-                cylinder(d=bar_size*2+0.1, thick+6); // Add a circle to prevent any tiny holes around cross bar
-                rotate([0, 0, 45]) cube([size, bar_size, 12], center=true);
-                rotate([0, 0, 45]) cube([bar_size, size, 12], center=true);
+                translate([0, 0, -1]) union() {
+                    cylinder(d=bar_size*2+0.1, thick+6); // Add a circle to prevent any tiny holes around cross bar
+                    rotate([0, 0, 45]) cube([size, bar_size, 12], center=true);
+                    rotate([0, 0, 45]) cube([bar_size, size, 12], center=true);
+                }
             }
-            }
+        }
+    }
+    if(style == 4) {
+        fan_type = size == 120 ? fan120x25 :
+            size == 80 ? fan80x38 :
+            size == 70 ? fan70x15 :
+            size == 60 ? fan60x25 :
+            size == 50 ? fan50x15 :
+            size == 40 ? fan40x11 :
+            size == 30 ? fan30x10 :
+            size == 25 ? fan25x10 :
+            fan17x8;
+        echo(fan_type);
+        size_x = fan_width(fan_type)/2;
+        translate([size_x+1, size_x+1, -1]) difference() {
+            linear_extrude(thick*2) rounded_square([fan_width(fan_type), fan_width(fan_type)], r = fan_width(fan_type) / 2 - fan_hole_pitch(fan_type));
+            translate([0, 0, -1]) fan_guard(fan_type, thickness=thick*4, spokes=4);
         }
     }
 }
